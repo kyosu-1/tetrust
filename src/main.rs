@@ -1,3 +1,8 @@
 fn main() {
-    println!("Hello, world!");
+    for _y in 0..20 {
+        for _x in 0..20 {
+            print!("[]");
+        }
+        println!();
+    }
 }
