@@ -1,4 +1,5 @@
 use std::{thread, time};
+use getch_rs::{Getch, Key};
 
  // フィールドサイズ
  const FIELD_WIDTH:  usize = 11 + 2;  // フィールド＋壁
@@ -21,7 +22,7 @@ use std::{thread, time};
 fn is_collision(field: &Field, pos: &Position, block: BlockKind) -> bool {
     for y in 0..4 {
         for x in 0..4 {
-            if field[y + pos.y + 1][x + pos.x] & BLOCKS[block as usize][y][x] == 1 {
+            if field[y + pos.y][x + pos.x] & BLOCKS[block as usize][y][x] == 1 {
                 return true;
             }
         }
@@ -114,19 +115,23 @@ fn main() {
     ];
 
     let mut pos = Position { x: 4, y: 0 };
+    let g = Getch::new();
 
     // 画面クリア
     println!("\x1b[2J\x1b[H\x1b[?25l");
 
-    // 30マス分落下させてみる
-    for _ in 0..30 {
+    loop {
         // 描画用フィールドの生成
         let mut field_buf = field;
-
+        // 自然落下
+        let new_pos = Position {
+            x: pos.x,
+            y: pos.y + 1,
+        };
         // 当たり判定
         if !is_collision(&field, &pos, BlockKind::I) {
-            // posのy座標を更新
-            pos.y += 1;
+            // posの座標を更新
+            pos = new_pos;
         }
 
         // 描画用フィールドにブロックの情報を書き込む
@@ -152,6 +157,40 @@ fn main() {
         }
         // 1秒間スリープ
         thread::sleep(time::Duration::from_millis(1000));
+        // キー入力待ち
+        match g.getch() {
+            Ok(Key::Left) => {
+                let new_pos = Position {
+                    x: pos.x - 1,
+                    y: pos.y,
+                };
+                if !is_collision(&field, &new_pos, BlockKind::I) {
+                    pos = new_pos;
+                }
+            }
+            Ok(Key::Right) => {
+                let new_pos = Position {
+                    x: pos.x + 1,
+                    y: pos.y,
+                };
+                if !is_collision(&field, &new_pos, BlockKind::I) {
+                    pos = new_pos;
+                }
+            }
+            Ok(Key::Down) => {
+                let new_pos = Position {
+                    x: pos.x,
+                    y: pos.y + 1,
+                };
+                if !is_collision(&field, &new_pos, BlockKind::I) {
+                    pos = new_pos;
+                }
+            }
+            Ok(Key::Char('q')) => {
+                break;
+            }
+            _ => (), // 何もしない
+        }
     }
 
     // カーソルを再表示
